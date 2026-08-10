@@ -48,6 +48,7 @@ To build CastXML from source, first obtain the prerequisites:
   This version of CastXML has been tested with LLVM/Clang
 
   - Git ``master`` as of 2026-06-10 (``6f47b6de08``)
+  - Release ``23.1``
   - Release ``22.1``
   - Release ``21.1``
   - Release ``20.1``
