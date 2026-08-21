@@ -133,6 +133,11 @@ int main(int argc_in, char const** argv_in)
     "    name(s).  Multiple names may be specified as a comma-separated\n"
     "    list or by repeating the option.\n"
     "\n"
+    "  --deflate=<v>\n"
+    "    Output XML as a deflated data blob. <v> is the compression level.\n"
+    "    <v> must be between 0 and 9 included. 0 means no compression at all,\n"
+    "    the output will be a plain XML as-if this option wasn't specified.\n"
+    "\n"
     "  -help, --help\n"
     "    Print castxml and internal Clang compiler usage information\n"
     "\n"
@@ -271,6 +276,17 @@ int main(int argc_in, char const** argv_in)
           ;
         /* clang-format on */
         return 1;
+      }
+    } else if (strncmp(argv[i], "--deflate=", 10) == 0) {
+      opts.ZLibCompressionLevel = atoi(argv[i] + 10);
+      if (opts.ZLibCompressionLevel < 0 || opts.ZLibCompressionLevel > 9) {
+        /* clang-format off */
+            std::cerr <<
+              "error: '--deflate=<v>' value must be between 0 and 9 included.!\n"
+              "\n" <<
+              usage
+              ;
+        /* clang-format on */
       }
     } else if (strcmp(argv[i], "-E") == 0) {
       opts.PPOnly = true;

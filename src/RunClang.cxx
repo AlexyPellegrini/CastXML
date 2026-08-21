@@ -50,6 +50,10 @@
 #include "llvm/Support/Path.h"
 #include "llvm/Support/raw_ostream.h"
 
+#ifdef ENABLE_ZLIB
+#include <zlib.h>
+#endif
+
 #if LLVM_VERSION_MAJOR >= 22
 #  include "clang/Options/Options.h"
 #  define CASTXML_CLANG_OPTIONS clang::options
@@ -200,6 +204,40 @@ public:
     sema.ActOnEndOfTranslationUnit();
 
     // Process the AST.
+    if (this->Opts.ZLibCompressionLevel > 0) {
+      auto& diags = this->CI.getDiagnostics();
+#ifdef ENABLE_ZLIB
+      llvm::SmallVector<char, 0> UncompressedBuf;
+      llvm::raw_svector_ostream UncompressedOS(UncompressedBuf);
+
+      outputXML(this->CI, ctx, UncompressedOS, this->Opts);
+
+      auto const sourceLen = static_cast<uLong>(UncompressedBuf.size());
+      auto destLen = compressBound(sourceLen);
+      llvm::SmallVector<char, 0> CompressedBuf(destLen);
+
+      auto const res =
+        compress2(reinterpret_cast<Bytef*>(CompressedBuf.data()), &destLen,
+                  reinterpret_cast<Bytef const*>(UncompressedBuf.data()),
+                  sourceLen, this->Opts.ZLibCompressionLevel);
+
+      if (res != Z_OK) {
+        diags.Report(
+          diags.getCustomDiagID(clang::DiagnosticsEngine::Error,
+                                "zlib compression failed with error code %0"))
+          << res;
+        return;
+      }
+
+      this->OS.write(CompressedBuf.data(), destLen);
+#else
+      diags.Report(diags.getCustomDiagID(
+        clang::DiagnosticsEngine::Error,
+        "zlib compression requested, but zlib support is not enabled."));
+#endif
+      return;
+    }
+
     outputXML(this->CI, ctx, this->OS, this->Opts);
   }
 };

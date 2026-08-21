@@ -53,6 +53,7 @@ struct Options
   std::string Predefines;
   std::string Triple;
   std::vector<std::string> StartNames;
+  int ZLibCompressionLevel = 0;
 };
 
 #endif // CASTXML_OPTIONS_H
